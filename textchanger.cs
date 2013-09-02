@@ -24,7 +24,7 @@ namespace textchanger.mod
 
         private FieldInfo descriptionField;
         private FieldInfo flavorField;
-
+        CardType[] cts;
 
 		//initialize everything here, Game is loaded at this point
         public textchanger()
@@ -90,19 +90,19 @@ namespace textchanger.mod
 
         }
 
-        private int getindexfromcardtypearray(CardType[] cts,string cardname)
+        private int getindexfromcardtypearray(CardType[] cts, string cardname)
         {
-            int retval =-1;
+            int retval = -1;
 
-            for (int i = 0; i < cts.Length; i++)
+            for (int i = 0; i <= cts.Length - 1; i++)
             {
                 if (cts[i].name.ToLower() == cardname.ToLower())
                 {
                     retval = i;
-                    break;
+                    break; // break passt schon :P
                 }
             }
-                return retval;
+            return retval;
         }
 
 
@@ -113,12 +113,12 @@ namespace textchanger.mod
             {
                 string path = Environment.CurrentDirectory + System.IO.Path.DirectorySeparatorChar + "cardtypesmsg.txt";
                 CardTypesMessage msg = (CardTypesMessage)info.arguments[0];
-                CardType[] cts = msg.cardTypes;
+                cts = new CardType[msg.cardTypes.Length];
+                cts = msg.cardTypes;
                 string lol = File.ReadAllText(path);
                 JsonReader jsonReader = new JsonReader();
                 Dictionary<string, object> dictionary = (Dictionary<string, object>)jsonReader.Read(lol);
                 Dictionary<string, object>[] d = (Dictionary<string, object>[])dictionary["cardTypes"];
-
                 for (int i = 0; i < d.GetLength(0); i++)
                 {
                     int cardid = Convert.ToInt32(d[i]["id"]);//no need, but why not?:D
@@ -128,9 +128,12 @@ namespace textchanger.mod
                     //get index from cts
                     int ctsindex=getindexfromcardtypearray(cts,cardname);
                     //change description
-                    this.descriptionField.SetValue(cts[ctsindex],description);
-                    //change flavor
-                    this.flavorField.SetValue(cts[ctsindex], flavor);
+                    if (ctsindex >= 0)
+                    {
+                        cts[ctsindex].description = description;
+                        //change flavor
+                        cts[ctsindex].flavor = flavor;
+                    }
                 }
                 //reset cardtypemanager
                 CardTypeManager.getInstance().reset();
