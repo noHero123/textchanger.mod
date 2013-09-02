@@ -71,11 +71,23 @@ namespace textchanger.mod
             }
 		}
 
-        public override bool BeforeInvoke(InvocationInfo info, out object returnValue) {
-            
-            returnValue = null;
+
+        public override bool WantsToReplace(InvocationInfo info)
+        {
+
             return false;
-        
+        }
+
+        public override void ReplaceMethod(InvocationInfo info, out object returnValue)
+        {
+            returnValue = null;
+        }
+
+        public override void BeforeInvoke(InvocationInfo info)
+        {
+
+            return;
+
         }
 
         private int getindexfromcardtypearray(CardType[] cts,string cardname)
