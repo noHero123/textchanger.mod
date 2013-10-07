@@ -109,7 +109,7 @@ namespace textchanger.mod
         public override void AfterInvoke (InvocationInfo info, ref object returnValue)
         //public override bool BeforeInvoke(InvocationInfo info, out object returnValue)
         {
-            if (info.target is GlobalMessageHandler && info.targetMethod.Equals("handleMessage"))
+            if (info.target is GlobalMessageHandler && info.targetMethod.Equals("handleMessage") && info.arguments[0] is CardTypesMessage)
             {
                 string path = Environment.CurrentDirectory + System.IO.Path.DirectorySeparatorChar + "cardtypesmsg.txt";
                 CardTypesMessage msg = (CardTypesMessage)info.arguments[0];
@@ -140,7 +140,7 @@ namespace textchanger.mod
                 //feed with edited cardtypes
                 CardTypeManager.getInstance().feed(cts);
                 //write lol in output_log, because if the mod doesnt do anything, so hes doing something!
-                Console.WriteLine("lol#");
+                
             }
 
            
