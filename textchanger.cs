@@ -43,7 +43,7 @@ namespace textchanger.mod
                 if (rcmm.text.StartsWith("You have joined"))
                 {
 
-                        RoomChatMessageMessage nrcmm = new RoomChatMessageMessage(rcmm.roomName, "Change the language of the card-descriptions with /language ENG for example\r\nfor a list of languages type /language help");
+                        RoomChatMessageMessage nrcmm = new RoomChatMessageMessage(rcmm.roomName, "Change the language of the card-descriptions with /language ENG (for example).\r\nfor a list of available languages type /language help");
                         nrcmm.from = "LanguageChanger";
                         App.ArenaChat.handleMessage(nrcmm);
                         App.Communicator.removeListener(this);
