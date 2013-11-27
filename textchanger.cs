@@ -66,6 +66,7 @@ namespace textchanger.mod
 		{
             this.pathToConfig = this.OwnFolder() + System.IO.Path.DirectorySeparatorChar;
             googlekeys.Add("DE", "0AhhxijYPL-BGdDJaWTI4UVJ3OUZfYzlCSWo3dkZSOXc");
+            googlekeys.Add("FR", "0AsfEX06xqzPEdE9lQlg5NFg2ejBRamltMEhta2FrX2c");
             //descriptionField = typeof(CardType).GetField("description", BindingFlags.Instance | BindingFlags.NonPublic);
             //flavorField = typeof(CardType).GetField("flavor", BindingFlags.Instance | BindingFlags.NonPublic);
             try
@@ -183,7 +184,7 @@ namespace textchanger.mod
                 {
                     System.IO.File.WriteAllText(this.pathToConfig + "Config.txt", language);
                     new Thread(new ThreadStart(this.workthread)).Start();
-                    rcmm.text = "the language was changed to" + language;
+                    rcmm.text = "the language was changed to " + language;
                 }
                 else
                 {
