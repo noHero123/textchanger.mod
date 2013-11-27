@@ -300,6 +300,7 @@ namespace textchanger.mod
             if (lol != ""){ key = lol; }
             if (key != "ENG")
             {
+                this.setOrginalCardtexts(); // or it would be possible to have multiple languages displayed
                 string response = this.getDataFromGoogleDocs(this.googlekeys[key]);
                 this.readJsonfromGoogle(response);
                 this.setCardtexts();
