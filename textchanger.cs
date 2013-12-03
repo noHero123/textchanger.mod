@@ -27,10 +27,17 @@ namespace textchanger.mod
         List<string> names = new List<string>();
         List<string> desc = new List<string>();
         List<string> flavor = new List<string>();
+        List<string> translatedDesc = new List<string>();
+        bool notTranslatedScrolls = false;
         List<string> oid = new List<string>();
         List<string> onames = new List<string>();
         List<string> odesc = new List<string>();
         List<string> oflavor = new List<string>();
+        List<CardType.TypeSet> otypes = new List<CardType.TypeSet>();
+        List<string[]> oactiveAbilitys = new List<string[]>();
+        List<string[]> opassiveAbilitys = new List<string[]>();
+
+
         private string pathToConfig = "";
         Dictionary<string, string> translatedPieceKind = new Dictionary<string, string>();
         Dictionary<string, string> translatedActiveAbility = new Dictionary<string, string>();
@@ -112,6 +119,7 @@ namespace textchanger.mod
             this.desc.Clear();
             this.flavor.Clear();
             this.id.Clear();
+            this.translatedDesc.Clear();
             JsonReader jsonReader = new JsonReader();
             Dictionary<string, object> dictionary = (Dictionary<string, object>)jsonReader.Read(txt);
             dictionary = (Dictionary<string, object>)dictionary["feed"];
@@ -135,7 +143,12 @@ namespace textchanger.mod
                     this.desc.Add((string)dictionary["$t"]);
                     dictionary = (Dictionary<string, object>)entrys[i]["gsx$flavor"];
                     this.flavor.Add((string)dictionary["$t"]);
-                    
+
+                    if (((Dictionary<string, object>)entrys[i]).ContainsKey("gsx$orginaldescription"))
+                    {
+                        dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaldescription"];
+                        this.translatedDesc.Add((string)dictionary["$t"]);
+                    }
                 }
 
             }
@@ -143,39 +156,11 @@ namespace textchanger.mod
            
         }
 
-        private ActiveAbility[] getActiveAbilities(Card c)
-        {
-            ActiveAbility[] retu = c.getActiveAbilities();
-            for (int i = 0; i < retu.Length; i++)
-            {
-                ActiveAbility activeAbility = retu[i];
-                if (!(activeAbility.name == "Move"))
-                {
-                    if (this.translatedActiveAbility.ContainsKey(activeAbility.name))
-                    { activeAbility.name = this.translatedActiveAbility[activeAbility.name]; }
-                }
-            }
-
-            return retu;
-
-        }
-
-        private PassiveAbility[] getPassiveAbilities(Card c)
-        {
-            PassiveAbility[] retu = c.getPassiveAbilities();
-            for (int i = 0; i < retu.Length; i++)
-            {
-                PassiveAbility activeAbility = retu[i];
-                if (this.translatedPassiveAbility.ContainsKey(activeAbility.displayName))
-                { activeAbility.displayName = this.translatedPassiveAbility[activeAbility.displayName]; }
-            }
-
-            return retu;
-
-        }
 
 
+        
 
+        
         private string getPieceTypes(Card c)
         {
             string retu = c.getPieceType();
@@ -184,14 +169,6 @@ namespace textchanger.mod
             
             return retu;
 
-        }
-
-        private string getPieceKind(Card c)
-        {
-            string retu = c.getPieceKind().ToString();
-            if (this.translatedPieceKind.ContainsKey(retu))
-            { retu = translatedPieceKind[retu]; }
-            return retu;
         }
 
 
@@ -205,9 +182,6 @@ namespace textchanger.mod
                     scrollsTypes["GlobalMessageHandler"].Methods.GetMethod("handleMessage",new Type[]{typeof(CardTypesMessage)}),
                     scrollsTypes["Communicator"].Methods.GetMethod("sendRequest", new Type[]{typeof(Message)}),
                     scrollsTypes["Card"].Methods.GetMethod("getPieceKindText")[0],
-                    scrollsTypes["Card"].Methods.GetMethod("getPieceType")[0],
-                    scrollsTypes["Card"].Methods.GetMethod("getActiveAbilities")[0],
-                    scrollsTypes["Card"].Methods.GetMethod("getPassiveAbilities")[0],
              };
             }
             catch
@@ -219,14 +193,8 @@ namespace textchanger.mod
 
         public override bool WantsToReplace(InvocationInfo info)
         {
-            if (info.target is Card && info.targetMethod.Equals("getPieceKindText"))
-            { return true; }
-            if (info.target is Card && info.targetMethod.Equals("getPieceType"))
-            { return true; }
-            if (info.target is Card && info.targetMethod.Equals("getActiveAbilities"))
-            { return true; }
-            if (info.target is Card && info.targetMethod.Equals("getPassiveAbilities"))
-            { return true; }
+            /*if (info.target is Card && info.targetMethod.Equals("getPieceKindText"))
+            { return true; } */
             if (info.target is Communicator && info.targetMethod.Equals("sendRequest") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
                 Console.WriteLine("##sendRequest");
@@ -236,35 +204,22 @@ namespace textchanger.mod
             return false;
         }
 
-
-       
         public override void ReplaceMethod(InvocationInfo info, out object returnValue)
         {
             returnValue = null;
-
+            /*
             if (info.target is Card && info.targetMethod.Equals("getPieceKindText"))
             {
+                string retu = (info.target as Card).getPieceKind().ToString();
+                if (this.translatedPieceKind.ContainsKey(retu))
+                { retu = translatedPieceKind[retu]; }
+                returnValue = retu;
                 if ((info.target as Card).isToken)
                 {
-                    returnValue = "TOKEN " + this.getPieceKind(info.target as Card);
+                    returnValue = "TOKEN " + returnValue;
                 }
-                returnValue = this.getPieceKind(info.target as Card);
-            }
 
-            if (info.target is Card && info.targetMethod.Equals("getPieceType"))
-            {
-
-                returnValue = this.getPieceTypes(info.target as Card);
-            }
-
-            if (info.target is Card && info.targetMethod.Equals("getActiveAbilities"))
-            {
-                returnValue = this.getActiveAbilities(info.target as Card);
-            }
-            if (info.target is Card && info.targetMethod.Equals("getPassiveAbilities"))
-            {
-                returnValue = this.getPassiveAbilities(info.target as Card);
-            }
+            }*/
 
             if (info.target is Communicator && info.targetMethod.Equals("sendRequest") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
@@ -275,8 +230,13 @@ namespace textchanger.mod
                 if (this.googlekeys.ContainsKey(language) || language == "ENG")
                 {
                     System.IO.File.WriteAllText(this.pathToConfig + "Config.txt", language);
+                    this.notTranslatedScrolls = false;
                     new Thread(new ThreadStart(this.workthread)).Start();
                     rcmm.text = "the language was changed to " + language;
+                    if (this.notTranslatedScrolls)
+                    {
+                        rcmm.text = rcmm.text + "\r\n" + "some scrolls-translations are outdated, these were not translated";
+                    }
                 }
                 else
                 {
@@ -292,13 +252,9 @@ namespace textchanger.mod
             
         }
 
-        public override void BeforeInvoke(InvocationInfo info)
-        {
 
-            return;
 
-        }
-
+        
         private int getindexfromcardtypearray(CardType[] cts, int cardid)
         {
             int retval = -1;
@@ -314,19 +270,87 @@ namespace textchanger.mod
             return retval;
         }
 
-       
+        private string changePieceKind(string s)
+        {
+            string retu = s;
+            if (this.translatedPieceKind.ContainsKey(retu))
+            { retu = translatedPieceKind[retu]; }
+            return retu;
+        }
+
+        private string changePieceTypes(string s)
+        {
+            string retu = s;
+            foreach (KeyValuePair<string, string> kvp in this.translatedPieceType)
+            { retu = retu.Replace(kvp.Key, kvp.Value); }
+
+            return retu;
+
+        }
+
+        private string changeActiveAbilities(string s)
+        {
+            string retu = s;
+
+                if (!(s == "Move") && s != null)
+                {
+                    if (this.translatedActiveAbility.ContainsKey(s))
+                    { retu = this.translatedActiveAbility[s]; }
+                }
+
+            return retu;
+
+        }
+
+        private string changePassiveAbilities(string s)
+        {
+            string retu = s;
+
+            if (s != null)
+            {
+                if (this.translatedPassiveAbility.ContainsKey(s))
+                { retu = this.translatedPassiveAbility[s]; }
+            }
+            if (s == retu)
+            {
+                foreach (string r in s.Split(' '))
+                {
+
+                    if (r != null)
+                    {
+                        if (this.translatedPassiveAbility.ContainsKey(r))
+                        { retu = retu.Replace(r, this.translatedPassiveAbility[r]); }
+
+                    }
+
+                }
+            }
+            return retu;
+
+        }
+
+
         private void setCardtexts()
         {
             clearDictionaries();
 
             CardType[] cts = new CardType[this.orginalcards.cardTypes.Length];
             this.orginalcards.cardTypes.CopyTo(cts,0);
+            bool traDescs = false;
+            if (this.translatedDesc.Count > 0)
+            { traDescs = true; }
+            
             for (int i = 0; i < this.id.Count;i++ )
             {
                 int cardid = Convert.ToInt32(this.id[i]);//no need, but why not?:D
                 string cardname = this.names[i];
                 string description = this.desc[i];
                 string flavor = this.flavor[i];
+                string transDesc = "";
+                if (traDescs)
+                {
+                    transDesc = translatedDesc[i];
+                }
 
                 //get index from cts
                 if (cardid == 99999)// its a kind we change
@@ -352,7 +376,13 @@ namespace textchanger.mod
                 //change description
                 if (ctsindex >= 0)
                 {
-                    cts[ctsindex].description = description;
+                   if (transDesc == cts[ctsindex].description)
+                   { cts[ctsindex].description = description; }
+                   else 
+                   { 
+                       Console.WriteLine("## "+cardname + " description was changed, so it is not translated");
+                       this.notTranslatedScrolls = true ;
+                   }
                     //change flavor
                     cts[ctsindex].flavor = flavor;
                 }
@@ -361,6 +391,32 @@ namespace textchanger.mod
                 
 
             }
+
+            for (int i = 0; i < this.id.Count; i++)
+            {
+                Console.WriteLine("change stuff");
+                int cardid = Convert.ToInt32(this.id[i]);//no need, but why not?:D
+                int ctsindex = getindexfromcardtypearray(cts, cardid);
+                //change description
+                if (ctsindex >= 0)
+                {
+                    cts[ctsindex].types = new CardType.TypeSet(changePieceTypes(cts[ctsindex].types.ToString()).Split(new string[]{", "},StringSplitOptions.RemoveEmptyEntries));
+                    foreach (ActiveAbility a in cts[ctsindex].abilities)
+                    {
+                        a.name = this.changeActiveAbilities(a.name);
+                    }
+                    foreach (PassiveAbility a in cts[ctsindex].passiveRules)
+                    {
+                        a.displayName = this.changePassiveAbilities(a.displayName);
+                    }
+                }
+
+
+
+
+
+            }
+
             //reset cardtypemanager
             CardTypeManager.getInstance().reset();
             //feed with edited cardtypes
@@ -374,13 +430,15 @@ namespace textchanger.mod
 
             CardType[] cts = new CardType[this.orginalcards.cardTypes.Length];
             this.orginalcards.cardTypes.CopyTo(cts, 0);
-            for (int i = 0; i < this.id.Count; i++)
+            for (int i = 0; i < this.oid.Count; i++)
             {
                 int cardid = Convert.ToInt32(this.oid[i]);//no need, but why not?:D
                 string cardname = this.onames[i];
                 string description = this.odesc[i];
                 string flavor = this.oflavor[i];
-
+                CardType.TypeSet ts = this.otypes[i];
+                string[] aa=this.oactiveAbilitys[i];
+                string[] pa = this.opassiveAbilitys[i];
                 //get index from cts
 
 
@@ -391,6 +449,19 @@ namespace textchanger.mod
                         cts[ctsindex].description = description;
                         //change flavor
                         cts[ctsindex].flavor = flavor;
+                        cts[ctsindex].types = ts;
+                        int j=0;
+                        foreach (ActiveAbility a in cts[ctsindex].abilities)
+                        {
+                            a.name = aa[j];
+                            j++;
+                        }
+                        int k = 0;
+                        foreach (PassiveAbility a in cts[ctsindex].passiveRules)
+                        {
+                            a.displayName = pa[k];
+                            k++;
+                        }
                     }
                 
 
@@ -440,9 +511,31 @@ namespace textchanger.mod
             
         }
 
+        public override void BeforeInvoke(InvocationInfo info)
+        {
+
+            return;
+
+        }
+
         public override void AfterInvoke (InvocationInfo info, ref object returnValue)
         //public override bool BeforeInvoke(InvocationInfo info, out object returnValue)
         {
+
+            if (info.target is Card && info.targetMethod.Equals("getPieceKindText"))
+            {
+                string retu = returnValue as string;
+                if (retu.StartsWith("TOKEN ")) { retu = retu.Replace("TOKEN ", ""); }
+                if (this.translatedPieceKind.ContainsKey(retu))
+                { retu = translatedPieceKind[retu]; }
+                returnValue = retu;
+                if ((info.target as Card).isToken)
+                {
+                    returnValue = "TOKEN " + returnValue;
+                }
+
+            }
+
             if (info.target is GlobalMessageHandler && info.targetMethod.Equals("handleMessage") && info.arguments[0] is CardTypesMessage)
             {
                 clearDictionaries();
@@ -450,20 +543,41 @@ namespace textchanger.mod
                 CardTypesMessage msg = (CardTypesMessage)info.arguments[0];
                 this.orginalcards = msg;
                 this.oid.Clear(); this.onames.Clear(); this.odesc.Clear(); this.oflavor.Clear();
+                this.otypes.Clear(); this.oactiveAbilitys.Clear(); this.opassiveAbilitys.Clear();
                 foreach (CardType ct in this.orginalcards.cardTypes) // have to copy the orginal values
                 {
                     oid.Add(ct.id.ToString());
                     onames.Add(ct.name);
                     odesc.Add(ct.description);
                     oflavor.Add(ct.flavor);
+                    otypes.Add(new CardType.TypeSet(changePieceTypes(ct.types.ToString()).Split(new string[]{", "},StringSplitOptions.RemoveEmptyEntries)));
+                   
+                    string[] aa= new string[ct.abilities.Length];
+                    int i =0;
+                    foreach (ActiveAbility a in ct.abilities)
+                    {
+                        aa[i]=a.name;
+                        i++;
+                    }
+                    this.oactiveAbilitys.Add(aa);
+
+                    string[] pa = new string[ct.passiveRules.Length];
+                    int j = 0;
+                    foreach (PassiveAbility a in ct.passiveRules)
+                    {
+                        pa[j] = a.displayName;
+                        j++;
+                    }
+                    this.opassiveAbilitys.Add(pa);
+
                     /*foreach ( ActiveAbility aa in ct.abilities)
                     {
                         Console.WriteLine("## Ability: "+aa.name);
                     }*/
-                    foreach (PassiveAbility aa in ct.passiveRules)
+                    /*foreach (PassiveAbility aa in ct.passiveRules)
                     {
                         Console.WriteLine("## PassiveAbility: " + aa.displayName);
-                    }
+                    }*/
                 }
                 new Thread(new ThreadStart(this.workthread)).Start();
             }
