@@ -47,6 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CardTextTranslator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="textchanger.cs" />
   </ItemGroup>
