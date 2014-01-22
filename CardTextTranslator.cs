@@ -32,8 +32,11 @@ namespace textchanger.mod
         Dictionary<string, string> translatedPieceType = new Dictionary<string, string>();
         Dictionary<string, string> translatedPassiveAbility = new Dictionary<string, string>();
 
-        public CardTextTranslator(string path)
+        Settings sttngs;
+
+        public CardTextTranslator(string path, Settings s)
         {
+            this.sttngs = s;
             this.pathToConfig = path;
         }
 
@@ -347,6 +350,8 @@ namespace textchanger.mod
                 System.IO.File.WriteAllText(this.pathToConfig + "Config.txt", "ENG");
             }
             if (lol != "") { key = lol; }
+            sttngs.usedLanguage = key;
+            if (sttngs.usedLanguage == "RU") sttngs.usedFont = -1; // special for crylic
             if (key != "ENG")
             {
                 this.setOrginalCardtexts();// or it would be possible to display multiple languages
