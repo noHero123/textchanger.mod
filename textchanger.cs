@@ -64,7 +64,9 @@ namespace textchanger.mod
             ctt.googlekeys.Add("DE", "0AhhxijYPL-BGdDJaWTI4UVJ3OUZfYzlCSWo3dkZSOXc");
             ctt.googlekeys.Add("FR", "0AsfEX06xqzPEdE9lQlg5NFg2ejBRamltMEhta2FrX2c");
             ctt.googlekeys.Add("RU", "0AsYOnt3MiugydDRRUEp4eXU0VUloYUxiSW5nVXl0Y1E");
-            //ctt.googlekeys.Add("SP", "0AprX3iUTAgX9dDcyUUhQSnVndkxCSjVXTzJ6NDA0c3c");
+            ctt.googlekeys.Add("SP", "0AprX3iUTAgX9dDcyUUhQSnVndkxCSjVXTzJ6NDA0c3c");
+            //ctt.googlekeys.Add("ENN", "0AhhxijYPL-BGdG1uNXY5WkhJaW1yNm4yaXpMazlaQ3c"); // for checking the scrolls who are changed!
+            
 
             try
             {
@@ -82,7 +84,7 @@ namespace textchanger.mod
 
 		public static int GetVersion ()
 		{
-			return 9;
+			return 10;
 		}
 
 
