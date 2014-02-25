@@ -84,7 +84,7 @@ namespace textchanger.mod
 
 		public static int GetVersion ()
 		{
-			return 10;
+			return 11;
 		}
 
 
@@ -97,7 +97,7 @@ namespace textchanger.mod
             {
                 return new MethodDefinition[] {
                     scrollsTypes["GlobalMessageHandler"].Methods.GetMethod("handleMessage",new Type[]{typeof(CardTypesMessage)}),
-                    scrollsTypes["Communicator"].Methods.GetMethod("sendRequest", new Type[]{typeof(Message)}),
+                    scrollsTypes["Communicator"].Methods.GetMethod("send", new Type[]{typeof(Message)}),
                      scrollsTypes["CardView"].Methods.GetMethod("createText_PassiveAbilities")[0], // for changeing the font 
                     //scrollsTypes["Card"].Methods.GetMethod("getPieceKindText")[0], // to slow
              };
