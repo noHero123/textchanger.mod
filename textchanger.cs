@@ -84,7 +84,7 @@ namespace textchanger.mod
 
 		public static int GetVersion ()
 		{
-			return 11;
+			return 12;
 		}
 
 
@@ -113,7 +113,7 @@ namespace textchanger.mod
         {
             /*if (info.target is Card && info.targetMethod.Equals("getPieceKindText"))
             { return true; } */
-            if (info.target is Communicator && info.targetMethod.Equals("sendRequest") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
+            if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
                 Console.WriteLine("##sendRequest");
                 return true;
@@ -139,7 +139,7 @@ namespace textchanger.mod
 
             }*/
 
-            if (info.target is Communicator && info.targetMethod.Equals("sendRequest") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
+            if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
                 RoomChatMessageMessage rcmm = info.arguments[0] as RoomChatMessageMessage;
                 rcmm.from = "LanguageChanger";
