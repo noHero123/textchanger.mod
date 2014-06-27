@@ -27,10 +27,12 @@ namespace textchanger.mod
         List<CardType.TypeSet> otypes = new List<CardType.TypeSet>();
         List<string[]> oactiveAbilitys = new List<string[]>();
         List<string[]> opassiveAbilitys = new List<string[]>();
+        List<string[]> opassiveDescs = new List<string[]>();
         Dictionary<string, string> translatedPieceKind = new Dictionary<string, string>();
         Dictionary<string, string> translatedActiveAbility = new Dictionary<string, string>();
         Dictionary<string, string> translatedPieceType = new Dictionary<string, string>();
         Dictionary<string, string> translatedPassiveAbility = new Dictionary<string, string>();
+        Dictionary<string, string> translatedPassiveDescription = new Dictionary<string, string>();
 
         Settings sttngs;
 
@@ -161,7 +163,6 @@ namespace textchanger.mod
         private string changePassiveAbilities(string s)
         {
             string retu = s;
-
             if (s != null)
             {
                 if (this.translatedPassiveAbility.ContainsKey(s))
@@ -185,6 +186,33 @@ namespace textchanger.mod
 
         }
 
+        private string changePassiveDescription(string s)
+        {
+            string retu = s;
+
+            if (s != null)
+            {
+                if (this.translatedPassiveDescription.ContainsKey(s))
+                { retu = this.translatedPassiveDescription[s]; }
+            }
+
+            if (s == retu)
+            {
+                foreach (string r in s.Split(' '))
+                {
+
+                    if (r != null)
+                    {
+                        if (this.translatedPassiveDescription.ContainsKey(r))
+                        { retu = retu.Replace(r, this.translatedPassiveDescription[r]); }
+
+                    }
+
+                }
+            }
+            return retu;
+
+        }
 
         private void setCardtexts()
         {
@@ -228,12 +256,19 @@ namespace textchanger.mod
                     this.translatedPassiveAbility.Add(cardname, description);
                 }
 
+                if (cardid == 55555)// its a ActiveAb. we change
+                {
+                    this.translatedPassiveDescription.Add(cardname, description);
+                }
+
                 int ctsindex = getindexfromcardtypearray(cts, cardid);
                 //change description
                 if (ctsindex >= 0)
                 {
                     if (transDesc == cts[ctsindex].description)
-                    { cts[ctsindex].description = description; }
+                    { 
+                        cts[ctsindex].description = description; 
+                    }
                     else
                     {
                         Console.WriteLine("## " + cardname + " description was changed, so it is not translated");
@@ -264,7 +299,9 @@ namespace textchanger.mod
                     foreach (PassiveAbility a in cts[ctsindex].passiveRules)
                     {
                         a.displayName = this.changePassiveAbilities(a.displayName);
+                        a.description = this.changePassiveDescription(a.description);
                     }
+
                 }
             }
 
@@ -292,6 +329,7 @@ namespace textchanger.mod
                 CardType.TypeSet ts = this.otypes[i];
                 string[] aa = this.oactiveAbilitys[i];
                 string[] pa = this.opassiveAbilitys[i];
+                string[] pd = this.opassiveDescs[i];
                 //get index from cts
 
 
@@ -313,8 +351,10 @@ namespace textchanger.mod
                     foreach (PassiveAbility a in cts[ctsindex].passiveRules)
                     {
                         a.displayName = pa[k];
+                        a.description = pd[k];
                         k++;
                     }
+
                 }
 
 
@@ -332,6 +372,7 @@ namespace textchanger.mod
             this.translatedActiveAbility.Clear();
             this.translatedPieceType.Clear();
             this.translatedPieceKind.Clear();
+            this.translatedPassiveDescription.Clear();
         }
 
         public void workthread()
@@ -356,6 +397,8 @@ namespace textchanger.mod
             {
                 this.setOrginalCardtexts();// or it would be possible to display multiple languages
                 string response = this.getDataFromGoogleDocs(this.googlekeys[key]);
+                Console.WriteLine("#response");
+                Console.WriteLine(response);
                 this.readJsonfromGoogle(response);
                 this.setCardtexts();
             }
@@ -373,6 +416,7 @@ namespace textchanger.mod
             this.orginalcards = msg;
             this.oid.Clear(); this.onames.Clear(); this.odesc.Clear(); this.oflavor.Clear();
             this.otypes.Clear(); this.oactiveAbilitys.Clear(); this.opassiveAbilitys.Clear();
+            this.opassiveDescs.Clear();
             foreach (CardType ct in this.orginalcards.cardTypes) // have to copy the orginal values
             {
                 oid.Add(ct.id.ToString());
@@ -398,6 +442,15 @@ namespace textchanger.mod
                     j++;
                 }
                 this.opassiveAbilitys.Add(pa);
+
+                string[] pd = new string[ct.passiveRules.Length];
+                int k = 0;
+                foreach (PassiveAbility a in ct.passiveRules)
+                {
+                    pd[k] = a.description;
+                    k++;
+                }
+                this.opassiveDescs.Add(pd);
 
                 /*foreach ( ActiveAbility aa in ct.abilities)
                 {

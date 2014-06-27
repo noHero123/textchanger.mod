@@ -84,7 +84,7 @@ namespace textchanger.mod
 
 		public static int GetVersion ()
 		{
-			return 12;
+			return 13;
 		}
 
 
@@ -99,6 +99,8 @@ namespace textchanger.mod
                     scrollsTypes["GlobalMessageHandler"].Methods.GetMethod("handleMessage",new Type[]{typeof(CardTypesMessage)}),
                     scrollsTypes["Communicator"].Methods.GetMethod("send", new Type[]{typeof(Message)}),
                      scrollsTypes["CardView"].Methods.GetMethod("createText_PassiveAbilities")[0], // for changeing the font 
+
+                    
                     //scrollsTypes["Card"].Methods.GetMethod("getPieceKindText")[0], // to slow
              };
             }
@@ -107,6 +109,8 @@ namespace textchanger.mod
                 return new MethodDefinition[] { };
             }
 		}
+
+      
 
 
         public override bool WantsToReplace(InvocationInfo info)
@@ -118,6 +122,9 @@ namespace textchanger.mod
                 Console.WriteLine("##sendRequest");
                 return true;
             }
+
+            
+
 
             return false;
         }
@@ -139,6 +146,7 @@ namespace textchanger.mod
 
             }*/
 
+            
             if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
                 RoomChatMessageMessage rcmm = info.arguments[0] as RoomChatMessageMessage;
@@ -220,7 +228,7 @@ namespace textchanger.mod
             
         }
 
-
+       
 
         public override void BeforeInvoke(InvocationInfo info)
         {
