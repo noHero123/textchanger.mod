@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace textchanger.mod
+namespace TranslationTool.mod
 {
     class Settings
     {

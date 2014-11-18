@@ -6,14 +6,23 @@ using JsonFx.Json;
 using System.Threading;
 using System.Net;
 using System.IO;
+using System.Reflection;
 
-namespace textchanger.mod
+namespace TranslationTool.mod
 {
+    public struct mappedstringding
+    {
+        public string key;
+        public string value;
+    }
+
     class CardTextTranslator
     {
         private string pathToConfig = "";
         public Dictionary<string, string> googlekeys = new Dictionary<string, string>();
         CardTypesMessage orginalcards;
+        MappedStringsMessage orginalmappedstrings;
+
         List<string> id = new List<string>();
         List<string> names = new List<string>();
         List<string> desc = new List<string>();
@@ -24,6 +33,8 @@ namespace textchanger.mod
         List<string> onames = new List<string>();
         List<string> odesc = new List<string>();
         List<string> oflavor = new List<string>();
+        Dictionary<string, string> oMappedStrings = new Dictionary<string, string>();
+
         List<CardType.TypeSet> otypes = new List<CardType.TypeSet>();
         List<string[]> oactiveAbilitys = new List<string[]>();
         List<string[]> opassiveAbilitys = new List<string[]>();
@@ -33,6 +44,7 @@ namespace textchanger.mod
         Dictionary<string, string> translatedPieceType = new Dictionary<string, string>();
         Dictionary<string, string> translatedPassiveAbility = new Dictionary<string, string>();
         Dictionary<string, string> translatedPassiveDescription = new Dictionary<string, string>();
+        Dictionary<string, mappedstringding> translatedMappedStrings = new Dictionary<string, mappedstringding>();
 
         Settings sttngs;
 
@@ -217,9 +229,18 @@ namespace textchanger.mod
         private void setCardtexts()
         {
             clearDictionaries();
+            
 
             CardType[] cts = new CardType[this.orginalcards.cardTypes.Length];
             this.orginalcards.cardTypes.CopyTo(cts, 0);
+
+            //mapped strings!!!
+            
+            MappedString[] newmappedstrings = new MappedString[this.orginalmappedstrings.strings.Length];
+            this.orginalmappedstrings.strings.CopyTo(newmappedstrings, 0);
+
+            Console.WriteLine("copied mappped strings");
+
             bool traDescs = false;
             if (this.translatedDesc.Count > 0)
             { traDescs = true; }
@@ -259,6 +280,24 @@ namespace textchanger.mod
                 if (cardid == 55555)// its a ActiveAb. we change
                 {
                     this.translatedPassiveDescription.Add(cardname, description);
+                }
+
+                if (cardid == 44444)// its a MappedString!
+                {
+                    Console.WriteLine("add mapped string" + cardname);
+                    mappedstringding msd = new mappedstringding();
+                    msd.key = cardname;
+                    msd.value = description;
+                    //flavor = orginal key-name
+                    if (this.oMappedStrings.ContainsKey(flavor) && transDesc == this.oMappedStrings[flavor])
+                    {
+                        Console.WriteLine("add mapped string" + cardname + " " + description + " " + flavor);
+                        this.translatedMappedStrings.Add(flavor, msd);
+                    }
+                    else 
+                    {
+                        Console.WriteLine("### " + flavor + " mappedstring was changed, so it is not translated");
+                    }
                 }
 
                 int ctsindex = getindexfromcardtypearray(cts, cardid);
@@ -305,12 +344,54 @@ namespace textchanger.mod
                 }
             }
 
+            
+            //change mapped strings
+            
+            List<MappedString> mappedstringlist = new List<MappedString>();
 
+            foreach(MappedString ms in newmappedstrings)
+            {
+                string key = ms.key;
+                string value = ms.value;
+
+                if(translatedMappedStrings.ContainsKey(ms.key))
+                {
+                    
+                    key = translatedMappedStrings[key].key;
+                    value = translatedMappedStrings[key].value;
+                }
+
+                Console.WriteLine("add to list " + key + " " + value);
+                mappedstringlist.Add(new MappedString(key, value));
+            }
+
+            //reset mappedstringmanager
+            MappedStringManager.getInstance().reset();
+            //feed it with new mappedstrigns!
+            MappedStringManager.getInstance().feed(mappedstringlist.ToArray());
+
+            //reset the keywords
+
+            MethodInfo generateKeywords = typeof(CardType).GetMethod("generateKeywords", BindingFlags.NonPublic | BindingFlags.Instance) ;
+            foreach (CardType ct in cts)
+            {
+                generateKeywords.Invoke(ct, null);
+            }
 
             //reset cardtypemanager
             CardTypeManager.getInstance().reset();
             //feed with edited cardtypes
             CardTypeManager.getInstance().feed(cts);
+
+            CardType ctype =  CardTypeManager.getInstance().get("Plate Armor");
+            Card c = new Card((long)123, ctype);
+
+            Console.WriteLine("plate aromor:");
+            foreach (KeywordDescription kd in c.getKeywords())
+            {
+                Console.WriteLine("" + kd.keyword + " : " + kd.description);
+            }
+            
 
         }
 
@@ -373,6 +454,7 @@ namespace textchanger.mod
             this.translatedPieceType.Clear();
             this.translatedPieceKind.Clear();
             this.translatedPassiveDescription.Clear();
+            this.translatedMappedStrings.Clear();
         }
 
         public void workthread()
@@ -409,14 +491,37 @@ namespace textchanger.mod
 
         }
 
+        public void incommingMappedStringsMessage(MappedStringsMessage msg)
+        {
+            this.orginalmappedstrings = msg;
+            this.oMappedStrings.Clear();
+            foreach (MappedString ms in msg.strings)
+            {
+                if (!this.oMappedStrings.ContainsKey(ms.key))
+                {
+                    this.oMappedStrings.Add(ms.key, ms.value);
+                }
+            }
+
+            /*
+            Console.WriteLine("refeed");
+            MappedString[] newmappedstrings = new MappedString[msg.strings.Length];
+            msg.strings.CopyTo(newmappedstrings, 0);
+            newmappedstrings[0].value = "LoL";
+            Console.WriteLine("change " + newmappedstrings[0].key + " to " + newmappedstrings[0].value);
+            MappedStringManager.getInstance().reset();
+            MappedStringManager.getInstance().feed(newmappedstrings);*/
+        }
 
         public void incommingCardTypesMessage(CardTypesMessage msg)
         {
             clearDictionaries();
             this.orginalcards = msg;
+
             this.oid.Clear(); this.onames.Clear(); this.odesc.Clear(); this.oflavor.Clear();
             this.otypes.Clear(); this.oactiveAbilitys.Clear(); this.opassiveAbilitys.Clear();
             this.opassiveDescs.Clear();
+
             foreach (CardType ct in this.orginalcards.cardTypes) // have to copy the orginal values
             {
                 oid.Add(ct.id.ToString());

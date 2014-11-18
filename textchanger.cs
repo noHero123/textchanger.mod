@@ -17,7 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 
-namespace textchanger.mod
+namespace TranslationTool.mod
 {
     public class textchanger : BaseMod, ICommListener
 	{
@@ -42,6 +42,12 @@ namespace textchanger.mod
                         App.Communicator.removeListener(this);
 
                 }
+            }
+
+            if (msg is MappedStringsMessage)
+            {
+                MappedStringsMessage msm = (MappedStringsMessage)msg;
+                ctt.incommingMappedStringsMessage(msm);
             }
 
             return;
@@ -84,7 +90,7 @@ namespace textchanger.mod
 
 		public static int GetVersion ()
 		{
-			return 13;
+			return 14;
 		}
 
 
@@ -239,12 +245,14 @@ namespace textchanger.mod
 
         public override void AfterInvoke (InvocationInfo info, ref object returnValue)
         {
-            if (info.target is GlobalMessageHandler && info.targetMethod.Equals("handleMessage") && info.arguments[0] is CardTypesMessage)
+            if (info.target is GlobalMessageHandler && info.targetMethod.Equals("handleMessage") )
             {
-                CardTypesMessage msg = (CardTypesMessage)info.arguments[0];
-                ctt.incommingCardTypesMessage(msg);
-                
-                
+                if (info.arguments[0] is CardTypesMessage)
+                {
+                    CardTypesMessage msg = (CardTypesMessage)info.arguments[0];
+                    ctt.incommingCardTypesMessage(msg);
+                }
+
             }
 
             // change font of card
@@ -275,7 +283,7 @@ namespace textchanger.mod
                 {
                     // change the font/size/alingment
                     List<GameObject> Images = (List<GameObject>)this.textsArrField.GetValue(info.target);
-                    Font ffont = (Font)Resources.Load("Fonts/arial", typeof(Font));
+                    Font ffont = (Font)ResourceManager.Load("Fonts/arial", typeof(Font));
                     for (int i = Images.Count-1; i>=0; i--)
                     {
                         GameObject go = Images[i];
@@ -305,12 +313,12 @@ namespace textchanger.mod
                 if (sttngs.usedFont >= 1)
                 {
                     //Console.WriteLine("change font");
-                    Font ffont = (Font)Resources.Load("Fonts/arial", typeof(Font));
+                    Font ffont = (Font)ResourceManager.Load("Fonts/arial", typeof(Font));
                     //some fonts I found in scrolls
-                    if (sttngs.usedFont == 1) { ffont = (Font)Resources.Load("Fonts/arial", typeof(Font)); }
-                    if (sttngs.usedFont == 2) { ffont = (Font)Resources.Load("Fonts/HoneyMeadBB_bold", typeof(Font)); }
-                    if (sttngs.usedFont == 3) { ffont = (Font)Resources.Load("Fonts/HoneyMeadBB_boldital", typeof(Font)); }
-                    if (sttngs.usedFont == 4) { ffont = (Font)Resources.Load("Fonts/dwarvenaxebb", typeof(Font)); }
+                    if (sttngs.usedFont == 1) { ffont = (Font)ResourceManager.Load("Fonts/arial", typeof(Font)); }
+                    if (sttngs.usedFont == 2) { ffont = (Font)ResourceManager.Load("Fonts/HoneyMeadBB_bold", typeof(Font)); }
+                    if (sttngs.usedFont == 3) { ffont = (Font)ResourceManager.Load("Fonts/HoneyMeadBB_boldital", typeof(Font)); }
+                    if (sttngs.usedFont == 4) { ffont = (Font)ResourceManager.Load("Fonts/dwarvenaxebb", typeof(Font)); }
 
                     // change the font/size/alingment
                     List<GameObject> Images = (List<GameObject>)this.textsArrField.GetValue(info.target);

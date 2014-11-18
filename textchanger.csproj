@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7DF5DEE9-EA96-4095-9EC2-D237C0B888BB}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>textchanger.mod</RootNamespace>
-    <AssemblyName>textchanger.mod</AssemblyName>
+    <RootNamespace>TranslationTool.mod</RootNamespace>
+    <AssemblyName>TranslationTool.mod</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -28,14 +28,15 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Assembly-CSharp.dll</HintPath>
+    </Reference>
     <Reference Include="JsonFx">
       <HintPath>..\JsonFx.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\Assembly-CSharp.dll</HintPath>
-    </Reference>
     <Reference Include="ScrollsModLoader.Interfaces">
       <HintPath>..\ScrollsModLoader.Interfaces.dll</HintPath>
     </Reference>
