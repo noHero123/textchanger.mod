@@ -90,7 +90,7 @@ namespace TranslationTool.mod
 
 		public static int GetVersion ()
 		{
-			return 14;
+			return 15;
 		}
 
 

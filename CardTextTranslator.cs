@@ -291,7 +291,7 @@ namespace TranslationTool.mod
                     //flavor = orginal key-name
                     if (this.oMappedStrings.ContainsKey(flavor) && transDesc == this.oMappedStrings[flavor])
                     {
-                        Console.WriteLine("add mapped string" + cardname + " " + description + " " + flavor);
+                        Console.WriteLine("add mapped string " + cardname + " " + description + " " + flavor);
                         this.translatedMappedStrings.Add(flavor, msd);
                     }
                     else 
@@ -321,7 +321,7 @@ namespace TranslationTool.mod
 
 
             }
-
+            Console.WriteLine("change cts");
             for (int i = 0; i < this.id.Count; i++)
             {
                 //change the other stuff of the cards (loaded with ids 66666-99999)
@@ -348,7 +348,7 @@ namespace TranslationTool.mod
             //change mapped strings
             
             List<MappedString> mappedstringlist = new List<MappedString>();
-
+            Console.WriteLine("change mappedstringlist");
             foreach(MappedString ms in newmappedstrings)
             {
                 string key = ms.key;
@@ -356,15 +356,16 @@ namespace TranslationTool.mod
 
                 if(translatedMappedStrings.ContainsKey(ms.key))
                 {
-                    
-                    key = translatedMappedStrings[key].key;
-                    value = translatedMappedStrings[key].value;
+
+                    key = translatedMappedStrings[ms.key].key;
+                    value = translatedMappedStrings[ms.key].value;
                 }
 
                 Console.WriteLine("add to list " + key + " " + value);
                 mappedstringlist.Add(new MappedString(key, value));
             }
 
+            Console.WriteLine("reset stuffs");
             //reset mappedstringmanager
             MappedStringManager.getInstance().reset();
             //feed it with new mappedstrigns!
