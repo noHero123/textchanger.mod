@@ -26,6 +26,7 @@ namespace TranslationTool.mod
         Settings sttngs;
         private string pathToConfig = "";
         FieldInfo textsArrField;
+        FieldInfo helpOverlayField;
 
         public void handleMessage(Message msg)
         { // collect data for enchantments (or units who buff)
@@ -64,6 +65,7 @@ namespace TranslationTool.mod
         public textchanger()
 		{
             this.textsArrField = typeof(CardView).GetField("textsArr", BindingFlags.Instance | BindingFlags.NonPublic);
+            this.helpOverlayField = typeof(CardView).GetField("helpOverlay", BindingFlags.Instance | BindingFlags.NonPublic);
             sttngs = new Settings();
             this.pathToConfig = this.OwnFolder() + System.IO.Path.DirectorySeparatorChar;
             ctt = new CardTextTranslator(pathToConfig, sttngs);
@@ -90,7 +92,7 @@ namespace TranslationTool.mod
 
 		public static int GetVersion ()
 		{
-			return 15;
+			return 16;
 		}
 
 
@@ -102,11 +104,12 @@ namespace TranslationTool.mod
             try
             {
                 return new MethodDefinition[] {
+
                     scrollsTypes["GlobalMessageHandler"].Methods.GetMethod("handleMessage",new Type[]{typeof(CardTypesMessage)}),
                     scrollsTypes["Communicator"].Methods.GetMethod("send", new Type[]{typeof(Message)}),
-                     scrollsTypes["CardView"].Methods.GetMethod("createText_PassiveAbilities")[0], // for changeing the font 
-
-                    
+                    scrollsTypes["CardView"].Methods.GetMethod("createText_PassiveAbilities")[0], // for changeing the font 
+                    scrollsTypes["CardView"].Methods.GetMethod("createHelpOverlay")[0], // for changeing the font
+           
                     //scrollsTypes["Card"].Methods.GetMethod("getPieceKindText")[0], // to slow
              };
             }
@@ -238,13 +241,19 @@ namespace TranslationTool.mod
 
         public override void BeforeInvoke(InvocationInfo info)
         {
-
+            
             return;
 
         }
 
         public override void AfterInvoke (InvocationInfo info, ref object returnValue)
         {
+            //Console.WriteLine("######" + info.targetMethod);
+            if (info.target is Card)//createTexts
+            {
+                Console.WriteLine("#######" + ((Card)info.target).getName());
+                Console.WriteLine("#######" + info.stackTrace);
+            }
             if (info.target is GlobalMessageHandler && info.targetMethod.Equals("handleMessage") )
             {
                 if (info.arguments[0] is CardTypesMessage)
@@ -254,6 +263,85 @@ namespace TranslationTool.mod
                 }
 
             }
+
+
+
+            if (info.target is CardView && info.targetMethod.Equals("createHelpOverlay"))//createTexts
+            {
+                if (sttngs.usedFont == 0 && sttngs.usedLanguage == "RU")
+                {
+                    GameObject image = (GameObject)this.helpOverlayField.GetValue(info.target);
+                    
+                    if (image != null && image.name == "help_overlay")
+                    {
+                        try
+                        {
+                            TextMesh[] lol3 = image.GetComponentsInChildren<TextMesh>();
+                            foreach (TextMesh lol1 in lol3)
+                            {
+
+                                if (lol1.name != "3DText_title")
+                                {
+                                    lol1.fontSize = (int)(lol1.fontSize * 0.725);
+                                }
+                            }
+
+                            //TextMesh lol2 = image.GetComponentInChildren<TextMesh>();
+                            //lol2.fontSize = (int)(lol2.fontSize * 0.725);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("#error in changesize");
+                        }
+                    }
+                }
+
+                if (sttngs.usedFont == -1 && sttngs.usedLanguage == "RU")
+                {
+                    // change the font/size/alingment
+
+                    //Font ffont = (Font)ResourceManager.Load("Fonts/arial", typeof(Font));
+
+                    GameObject image = (GameObject)this.helpOverlayField.GetValue(info.target);
+                    if (image != null)
+                    {
+                        try
+                        {
+                            TextMesh[] lol3 = image.GetComponentsInChildren<TextMesh>();
+                            foreach (TextMesh lol1 in lol3)
+                            {
+                                if (lol1.name != "3DText_title")
+                                {
+                                    /*
+                                    Color c2 = image.renderer.material.color;
+                                    lol1.font = ffont;
+                                    lol1.gameObject.renderer.material = ffont.material;
+                                    lol1.gameObject.renderer.material.color = c2;
+                                    */
+                                    lol1.fontSize = (int)(lol1.fontSize * 0.725);
+                                }
+                            }
+
+                        /*
+                        TextMesh lol2 = image.GetComponentInChildren<TextMesh>();
+                        Color c2 = image.renderer.material.color;
+                        lol2.font = ffont;
+                        image.renderer.material = ffont.material;
+                        image.renderer.material.color = c2;
+                        lol2.fontSize = (int)(lol2.fontSize * 0.725);
+                        */
+
+                        }
+                        catch
+                        {
+                            Console.WriteLine("#error in changesize");
+                        }
+                    }
+
+                }
+
+            }
+
 
             // change font of card
             if (info.target is CardView && info.targetMethod.Equals("createText_PassiveAbilities"))//createTexts
@@ -275,6 +363,8 @@ namespace TranslationTool.mod
                         }
                         catch { }
                     }
+
+                    
 
                     return;
                 }
@@ -305,6 +395,7 @@ namespace TranslationTool.mod
                         }
                         catch { }
                     }
+
                     return;
                 }
 
