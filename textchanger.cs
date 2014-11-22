@@ -27,6 +27,7 @@ namespace TranslationTool.mod
         private string pathToConfig = "";
         FieldInfo textsArrField;
         FieldInfo helpOverlayField;
+        FieldInfo renderQueueOffsetsfield;
 
         public void handleMessage(Message msg)
         { // collect data for enchantments (or units who buff)
@@ -66,6 +67,7 @@ namespace TranslationTool.mod
 		{
             this.textsArrField = typeof(CardView).GetField("textsArr", BindingFlags.Instance | BindingFlags.NonPublic);
             this.helpOverlayField = typeof(CardView).GetField("helpOverlay", BindingFlags.Instance | BindingFlags.NonPublic);
+            this.renderQueueOffsetsfield = typeof(CardView).GetField("renderQueueOffsets", BindingFlags.Instance | BindingFlags.NonPublic);
             sttngs = new Settings();
             this.pathToConfig = this.OwnFolder() + System.IO.Path.DirectorySeparatorChar;
             ctt = new CardTextTranslator(pathToConfig, sttngs);
@@ -92,7 +94,7 @@ namespace TranslationTool.mod
 
 		public static int GetVersion ()
 		{
-			return 16;
+			return 17;
 		}
 
 
@@ -108,8 +110,10 @@ namespace TranslationTool.mod
                     scrollsTypes["GlobalMessageHandler"].Methods.GetMethod("handleMessage",new Type[]{typeof(CardTypesMessage)}),
                     scrollsTypes["Communicator"].Methods.GetMethod("send", new Type[]{typeof(Message)}),
                     scrollsTypes["CardView"].Methods.GetMethod("createText_PassiveAbilities")[0], // for changeing the font 
-                    scrollsTypes["CardView"].Methods.GetMethod("createHelpOverlay")[0], // for changeing the font
+                    //scrollsTypes["CardView"].Methods.GetMethod("createHelpOverlay")[0], // for changeing the font
            
+                    scrollsTypes["CardView"].Methods.GetMethod("createText",new Type[]{typeof(GameObject), typeof(Font), typeof(string), typeof(int), typeof(float), typeof(Vector3)}),
+
                     //scrollsTypes["Card"].Methods.GetMethod("getPieceKindText")[0], // to slow
              };
             }
@@ -126,17 +130,77 @@ namespace TranslationTool.mod
         {
             /*if (info.target is Card && info.targetMethod.Equals("getPieceKindText"))
             { return true; } */
-            if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
+            if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage)
             {
-                Console.WriteLine("##sendRequest");
-                return true;
+                if (((RoomChatMessageMessage)info.arguments[0]).text.StartsWith("/language "))
+                {
+                    Console.WriteLine("##sendRequest");
+                    return true;
+                }
             }
-
+            if (info.target is CardView && info.targetMethod.Equals("createText"))//createTexts
+            {
+                string name = (string)(info.arguments[2]);
+                if (name.StartsWith("keyword_") || name.StartsWith("description_"))
+                {
+                    return true;
+                }
+            }
             
 
 
             return false;
         }
+
+
+        private GameObject createText(GameObject parent, Font font, string name, int fontSize, float characterSize, Vector3 scale, CardView cv)
+        {
+            if (sttngs.usedLanguage == Language.RU)
+            {
+                fontSize = (int)(fontSize * 0.725);
+            }
+
+            if (sttngs.usedFont == -1 && sttngs.usedLanguage == Language.RU)
+            {
+                font = (Font)ResourceManager.Load("Fonts/arial"); 
+            }
+            if (sttngs.usedFont == 1) { font = (Font)ResourceManager.Load("Fonts/arial"); }
+            else
+            {
+                if (sttngs.usedFont == 2) { font = (Font)ResourceManager.Load("Fonts/HoneyMeadBB_bold"); }
+                else
+                {
+                    if (sttngs.usedFont == 3) { font = (Font)ResourceManager.Load("Fonts/HoneyMeadBB_boldital"); }
+                    else
+                    {
+                        if (sttngs.usedFont == 4) { font = (Font)ResourceManager.Load("Fonts/dwarvenaxebb"); }
+                    }
+                }
+            }
+
+            GameObject gameObject = new GameObject("TextMesh");
+            MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+            TextMesh textMesh = gameObject.AddComponent<TextMesh>();
+            textMesh.font = font;
+            
+            textMesh.fontSize = fontSize;
+            textMesh.characterSize = characterSize;
+            textMesh.lineSpacing = 0.85f;
+            gameObject.name = name;
+            font.material.color = Color.black;
+            meshRenderer.material = font.material;
+            meshRenderer.material.shader = ResourceManager.LoadShader("Scrolls/GUI/3DTextShader");//CardView.fontShader
+
+            //this.renderQueueOffsets.Add(meshRenderer, -4);
+            ((Dictionary<Renderer, int>)this.renderQueueOffsetsfield.GetValue(cv)).Add(meshRenderer, -4);
+
+            UnityUtil.addChild(parent, gameObject);
+            gameObject.transform.localScale = scale;
+            gameObject.transform.localEulerAngles = new Vector3(90f, 90f, 270f);
+            gameObject.renderer.material.color = new Color(0.23f, 0.16f, 0.125f);
+            return gameObject;
+        }
+
 
         public override void ReplaceMethod(InvocationInfo info, out object returnValue)
         {
@@ -154,7 +218,10 @@ namespace TranslationTool.mod
                 }
 
             }*/
-
+            if (info.target is CardView && info.targetMethod.Equals("createText"))//createTexts
+            {
+                returnValue = createText((GameObject)info.arguments[0], (Font)info.arguments[1], (string)info.arguments[2], (int)info.arguments[3], (float)info.arguments[4], (Vector3)info.arguments[5], (CardView)info.target);
+            }
             
             if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
@@ -268,7 +335,7 @@ namespace TranslationTool.mod
 
             if (info.target is CardView && info.targetMethod.Equals("createHelpOverlay"))//createTexts
             {
-                if (sttngs.usedFont == 0 && sttngs.usedLanguage == "RU")
+                if (sttngs.usedFont == 0 && sttngs.usedLanguage == Language.RU)
                 {
                     GameObject image = (GameObject)this.helpOverlayField.GetValue(info.target);
                     
@@ -296,11 +363,11 @@ namespace TranslationTool.mod
                     }
                 }
 
-                if (sttngs.usedFont == -1 && sttngs.usedLanguage == "RU")
+                if (sttngs.usedFont == -1 && sttngs.usedLanguage == Language.RU)
                 {
                     // change the font/size/alingment
 
-                    //Font ffont = (Font)ResourceManager.Load("Fonts/arial", typeof(Font));
+                    Font ffont = (Font)ResourceManager.Load("Fonts/arial", typeof(Font));
 
                     GameObject image = (GameObject)this.helpOverlayField.GetValue(info.target);
                     if (image != null)
@@ -312,12 +379,20 @@ namespace TranslationTool.mod
                             {
                                 if (lol1.name != "3DText_title")
                                 {
-                                    /*
+                                    
                                     Color c2 = image.renderer.material.color;
+                                    int fsize = lol1.fontSize;
+                                    float csize = lol1.characterSize;
                                     lol1.font = ffont;
+                                    lol1.fontSize = fsize;
+                                    lol1.characterSize = csize;
+                                    ffont.material.color = Color.black;
                                     lol1.gameObject.renderer.material = ffont.material;
-                                    lol1.gameObject.renderer.material.color = c2;
-                                    */
+                                    lol1.gameObject.renderer.material.color = new Color(0.23f, 0.16f, 0.125f);
+                                    //lol1.gameObject.GetComponent<MeshRenderer>().material = ffont.material;
+                                    //lol1.gameObject.GetComponent<MeshRenderer>().material.shader = ResourceManager.LoadShader("Scrolls/GUI/3DTextShader");
+
+                                    
                                     lol1.fontSize = (int)(lol1.fontSize * 0.725);
                                 }
                             }
@@ -347,7 +422,7 @@ namespace TranslationTool.mod
             if (info.target is CardView && info.targetMethod.Equals("createText_PassiveAbilities"))//createTexts
             {
                 //some exceptions for russian language (crylic is stupid ;_;)
-                if (sttngs.usedFont == 0 && sttngs.usedLanguage == "RU")
+                if (sttngs.usedFont == 0 && sttngs.usedLanguage == Language.RU)
                 { 
                     List<GameObject> Images = (List<GameObject>)this.textsArrField.GetValue(info.target);
                     foreach (GameObject go in Images)
@@ -369,7 +444,7 @@ namespace TranslationTool.mod
                     return;
                 }
 
-                if (sttngs.usedFont == -1 && sttngs.usedLanguage == "RU")
+                if (sttngs.usedFont == -1 && sttngs.usedLanguage == Language.RU)
                 {
                     // change the font/size/alingment
                     List<GameObject> Images = (List<GameObject>)this.textsArrField.GetValue(info.target);

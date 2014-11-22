@@ -5,10 +5,20 @@ using System.Text;
 
 namespace TranslationTool.mod
 {
+    public enum Language
+    {
+        ENG,
+        RU,
+        DE,
+        FR,
+        SP
+
+    }
+
     class Settings
     {
         public int usedFont = 0;
-        public string usedLanguage = "ENG";
+        public Language usedLanguage = Language.ENG;
 
     }
 }

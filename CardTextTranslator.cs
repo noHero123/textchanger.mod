@@ -402,6 +402,10 @@ namespace TranslationTool.mod
 
             CardType[] cts = new CardType[this.orginalcards.cardTypes.Length];
             this.orginalcards.cardTypes.CopyTo(cts, 0);
+
+            MappedString[] newmappedstrings = new MappedString[this.orginalmappedstrings.strings.Length];
+            this.orginalmappedstrings.strings.CopyTo(newmappedstrings, 0);
+
             for (int i = 0; i < this.oid.Count; i++)
             {
                 int cardid = Convert.ToInt32(this.oid[i]);//no need, but why not?:D
@@ -441,10 +445,37 @@ namespace TranslationTool.mod
 
 
             }
+
+            //reset mapped strings
+            List<MappedString> mappedstringlist = new List<MappedString>();
+            foreach (MappedString ms in newmappedstrings)
+            {
+                string key = ms.key;
+                string value = ms.value;
+                mappedstringlist.Add(new MappedString(key, value));
+            }
+
+
+            Console.WriteLine("reset stuffs");
+            //reset mappedstringmanager
+            MappedStringManager.getInstance().reset();
+            //feed it with new mappedstrigns!
+            MappedStringManager.getInstance().feed(mappedstringlist.ToArray());
+
+            //reset the keywords
+
+            MethodInfo generateKeywords = typeof(CardType).GetMethod("generateKeywords", BindingFlags.NonPublic | BindingFlags.Instance);
+            foreach (CardType ct in cts)
+            {
+                generateKeywords.Invoke(ct, null);
+            }
+
             //reset cardtypemanager
             CardTypeManager.getInstance().reset();
             //feed with edited cardtypes
             CardTypeManager.getInstance().feed(cts);
+
+
 
         }
 
@@ -474,8 +505,13 @@ namespace TranslationTool.mod
                 System.IO.File.WriteAllText(this.pathToConfig + "Config.txt", "ENG");
             }
             if (lol != "") { key = lol; }
-            sttngs.usedLanguage = key;
-            if (sttngs.usedLanguage == "RU") sttngs.usedFont = -1; // special for crylic
+            if (key == "RU") sttngs.usedLanguage = Language.RU;
+            if (key == "ENG") sttngs.usedLanguage = Language.ENG;
+            if (key == "DE") sttngs.usedLanguage = Language.DE;
+            if (key == "FR") sttngs.usedLanguage = Language.FR;
+            if (key == "SP") sttngs.usedLanguage = Language.SP;
+           
+            if (sttngs.usedLanguage == Language.RU) sttngs.usedFont = -1; // special for crylic
             if (key != "ENG")
             {
                 this.setOrginalCardtexts();// or it would be possible to display multiple languages
