@@ -44,7 +44,7 @@ namespace TranslationTool.mod
         Dictionary<string, string> translatedPieceType = new Dictionary<string, string>();
         Dictionary<string, string> translatedPassiveAbility = new Dictionary<string, string>();
         Dictionary<string, string> translatedPassiveDescription = new Dictionary<string, string>();
-        Dictionary<string, mappedstringding> translatedMappedStrings = new Dictionary<string, mappedstringding>();
+        List<mappedstringding> translatedMappedStrings = new List<mappedstringding>();
 
         Settings sttngs;
 
@@ -289,10 +289,22 @@ namespace TranslationTool.mod
                     msd.key = cardname;
                     msd.value = description;
                     //flavor = orginal key-name
-                    if (this.oMappedStrings.ContainsKey(flavor) && transDesc == this.oMappedStrings[flavor])
+
+                    bool foundDescription = false;
+
+                    foreach (string s in this.oMappedStrings.Values)
+                    {
+                        if (s == transDesc)
+                        {
+                            foundDescription = true;
+                            break;
+                        }
+                    }
+
+                    if (foundDescription)
                     {
                         Console.WriteLine("add mapped string " + cardname + " " + description + " " + flavor);
-                        this.translatedMappedStrings.Add(flavor, msd);
+                        this.translatedMappedStrings.Add(msd);
                     }
                     else 
                     {
@@ -349,21 +361,33 @@ namespace TranslationTool.mod
             
             List<MappedString> mappedstringlist = new List<MappedString>();
             Console.WriteLine("change mappedstringlist");
+            //add orginal mapped strings first
             foreach(MappedString ms in newmappedstrings)
             {
                 string key = ms.key;
                 string value = ms.value;
 
-                if(translatedMappedStrings.ContainsKey(ms.key))
+                /*if(translatedMappedStrings.ContainsKey(ms.key))
                 {
 
                     key = translatedMappedStrings[ms.key].key;
                     value = translatedMappedStrings[ms.key].value;
                 }
+                */
+                Console.WriteLine("add to list " + key + " " + value);
+                mappedstringlist.Add(new MappedString(key, value));
+            }
+
+            //add translated ones!
+            foreach (mappedstringding ms in translatedMappedStrings)
+            {
+                string key = ms.key;
+                string value = ms.value;
 
                 Console.WriteLine("add to list " + key + " " + value);
                 mappedstringlist.Add(new MappedString(key, value));
             }
+
 
             Console.WriteLine("reset stuffs");
             //reset mappedstringmanager
