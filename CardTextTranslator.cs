@@ -16,18 +16,58 @@ namespace TranslationTool.mod
         public string value;
     }
 
+    public struct achivementding
+    {
+        public string id;
+        public string name;
+        public string description;
+        public string oname;
+        public string odescription;
+    }
+
+    public struct trialding
+    {
+        public string id;
+        public string name;
+        public string description;
+        public string flavour;
+        public string title;
+
+        public string oname;
+        public string odescription;
+        public string oflavour;
+        public string otitle;
+    }
+
     class CardTextTranslator
     {
         private string pathToConfig = "";
+
+        public string chatroom = "general-10";
         public Dictionary<string, string> googlekeys = new Dictionary<string, string>();
+
+        public Dictionary<string, string> googleAchivementkeys = new Dictionary<string, string>();
+
+        public Dictionary<string, string> googleTutorialkeys = new Dictionary<string, string>();
+
         CardTypesMessage orginalcards;
         MappedStringsMessage orginalmappedstrings;
 
-        List<string> id = new List<string>();
-        List<string> names = new List<string>();
-        List<string> desc = new List<string>();
-        List<string> flavor = new List<string>();
-         List<string> translatedDesc = new List<string>();
+        Dictionary<string, achivementding> achivementlist = new Dictionary<string, achivementding>();
+        AchievementTypesMessage orginalAchivements;
+
+        Dictionary<string, trialding> triallist = new Dictionary<string, trialding>();
+        //dont need the orginal ones, because they are sended every time we click on it-> translate them on arrive!
+
+
+        private List<string> untranslatedcard = new List<string>();
+
+        public List<string> id = new List<string>();
+        public List<string> names = new List<string>();
+        public List<string> desc = new List<string>();
+        public List<string> flavor = new List<string>();
+        public List<string> translatedDesc = new List<string>();
+
         public bool notTranslatedScrolls = false;
         List<string> oid = new List<string>();
         List<string> onames = new List<string>();
@@ -54,16 +94,37 @@ namespace TranslationTool.mod
             this.pathToConfig = path;
         }
 
-        private string getDataFromGoogleDocs(string googledatakey)
+        public string getDataFromGoogleDocs(string googledatakey)
         {
             WebRequest myWebRequest;
+
+            //https://docs.google.com/spreadsheet/pub?key=0AhhxijYPL-BGdDJaWTI4UVJ3OUZfYzlCSWo3dkZSOXc&output=txt
             myWebRequest = WebRequest.Create("https://spreadsheets.google.com/feeds/list/" + googledatakey + "/od6/public/values?alt=json");
             System.Net.ServicePointManager.ServerCertificateValidationCallback += (s, ce, ca, p) => true;// or you get an exeption, because mono doesnt trust anyone
+            
             myWebRequest.Timeout = 10000;
-            WebResponse myWebResponse = myWebRequest.GetResponse();
-            System.IO.Stream stream = myWebResponse.GetResponseStream();
-            System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8);
-            string ressi = reader.ReadToEnd();
+            string ressi = "error";
+
+            int loaded = 0;
+            while (loaded < 5)
+            {
+                try
+                {
+                    WebResponse myWebResponse = myWebRequest.GetResponse();
+                    System.IO.Stream stream = myWebResponse.GetResponseStream();
+                    System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8);
+                    ressi = reader.ReadToEnd();
+
+                    loaded = 10;
+                }
+                catch
+                {
+                    loaded++;
+                    if (loaded >= 4) myWebRequest.Timeout = 20000;
+                    Console.WriteLine("timeout/error");
+                }
+            }
+
             return ressi;
         }
 
@@ -113,6 +174,251 @@ namespace TranslationTool.mod
 
         }
 
+        public void readAchiveJsonfromGoogle(string txt)
+        {
+            //Console.WriteLine(txt);
+            this.achivementlist.Clear();
+
+            JsonReader jsonReader = new JsonReader();
+            Dictionary<string, object> dictionary = (Dictionary<string, object>)jsonReader.Read(txt);
+            dictionary = (Dictionary<string, object>)dictionary["feed"];
+            Dictionary<string, object>[] entrys = (Dictionary<string, object>[])dictionary["entry"];
+            for (int i = 0; i < entrys.GetLength(0); i++)
+            {
+
+                dictionary = (Dictionary<string, object>)entrys[i]["gsx$id"];
+                
+                if (((string)dictionary["$t"]).ToLower() != "")
+                {
+                    string id = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedname"];
+                    string tname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginalname"];
+                    string oname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translateddescription"];
+                    string tdesc = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaldescription"];
+                    string odesc = ((string)dictionary["$t"]);
+
+                    achivementding a = new achivementding();
+                    a.id = id;
+                    a.name = tname;
+                    a.oname = oname;
+                    a.description = tdesc;
+                    a.odescription = odesc;
+
+                    this.achivementlist.Add(id, a);
+                }
+
+            }
+
+
+        }
+
+        public void readTrialJsonfromGoogle(string txt)
+        {
+            //Console.WriteLine(txt);
+            this.triallist.Clear();
+
+            JsonReader jsonReader = new JsonReader();
+            Dictionary<string, object> dictionary = (Dictionary<string, object>)jsonReader.Read(txt);
+            dictionary = (Dictionary<string, object>)dictionary["feed"];
+            Dictionary<string, object>[] entrys = (Dictionary<string, object>[])dictionary["entry"];
+            for (int i = 0; i < entrys.GetLength(0); i++)
+            {
+
+                dictionary = (Dictionary<string, object>)entrys[i]["gsx$id"];
+
+                if (((string)dictionary["$t"]).ToLower() != "")
+                {
+                    string id = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedname"];
+                    string tname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginalname"];
+                    string oname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translateddescription"];
+                    string tdesc = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaldescription"];
+                    string odesc = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedflavour"];
+                    string tflav = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginalflavour"];
+                    string oflav = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedtitel"];
+                    string ttitle = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaltitle"];
+                    string otitle= ((string)dictionary["$t"]);
+
+                    trialding a = new trialding();
+                    a.id = id;
+                    a.name = tname;
+                    a.oname = oname;
+                    a.description = tdesc;
+                    a.odescription = odesc;
+                    a.flavour = tflav;
+                    a.oflavour = oflav;
+                    a.title = ttitle;
+                    a.otitle = otitle;
+
+                    this.triallist.Add(id, a);
+                }
+
+            }
+
+
+        }
+
+
+
+
+        public void readJsonfromGoogleFast(string txt)
+        {
+            //Console.WriteLine(txt);
+            this.names.Clear();
+            this.desc.Clear();
+            this.flavor.Clear();
+            this.id.Clear();
+            this.translatedDesc.Clear();
+
+            String[] lines = txt.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 1; i < lines.Length; i++)
+            {
+                /*for (int j = 0; j < 4; j++)
+                {
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$r"+(j+1)];
+                    Console.WriteLine((string)dictionary["$t"]);
+                    
+                }*/
+
+                string[] data = lines[i].Split(new string[] { "\t" }, StringSplitOptions.None);
+                if(data.Length >=1) this.id.Add(data[0]);
+                if (data.Length >= 2) this.names.Add(data[1]);
+                if (data.Length >= 3) this.desc.Add(data[2]);
+                if (data.Length >= 4) this.flavor.Add(data[3]);
+                if (data.Length >= 5) this.translatedDesc.Add(data[4]);
+
+            }
+
+
+        }
+
+        public void readAchiveJsonfromGoogleFast(string txt)
+        {
+            //Console.WriteLine(txt);
+            this.achivementlist.Clear();
+
+            JsonReader jsonReader = new JsonReader();
+            Dictionary<string, object> dictionary = (Dictionary<string, object>)jsonReader.Read(txt);
+            dictionary = (Dictionary<string, object>)dictionary["feed"];
+            Dictionary<string, object>[] entrys = (Dictionary<string, object>[])dictionary["entry"];
+            for (int i = 0; i < entrys.GetLength(0); i++)
+            {
+
+                dictionary = (Dictionary<string, object>)entrys[i]["gsx$id"];
+
+                if (((string)dictionary["$t"]).ToLower() != "")
+                {
+                    string id = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedname"];
+                    string tname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginalname"];
+                    string oname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translateddescription"];
+                    string tdesc = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaldescription"];
+                    string odesc = ((string)dictionary["$t"]);
+
+                    achivementding a = new achivementding();
+                    a.id = id;
+                    a.name = tname;
+                    a.oname = oname;
+                    a.description = tdesc;
+                    a.odescription = odesc;
+
+                    this.achivementlist.Add(id, a);
+                }
+
+            }
+
+
+        }
+
+        public void readTrialJsonfromGoogleFast(string txt)
+        {
+            //Console.WriteLine(txt);
+            this.triallist.Clear();
+
+            JsonReader jsonReader = new JsonReader();
+            Dictionary<string, object> dictionary = (Dictionary<string, object>)jsonReader.Read(txt);
+            dictionary = (Dictionary<string, object>)dictionary["feed"];
+            Dictionary<string, object>[] entrys = (Dictionary<string, object>[])dictionary["entry"];
+            for (int i = 0; i < entrys.GetLength(0); i++)
+            {
+
+                dictionary = (Dictionary<string, object>)entrys[i]["gsx$id"];
+
+                if (((string)dictionary["$t"]).ToLower() != "")
+                {
+                    string id = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedname"];
+                    string tname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginalname"];
+                    string oname = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translateddescription"];
+                    string tdesc = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaldescription"];
+                    string odesc = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedflavour"];
+                    string tflav = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginalflavour"];
+                    string oflav = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$translatedtitel"];
+                    string ttitle = ((string)dictionary["$t"]);
+
+                    dictionary = (Dictionary<string, object>)entrys[i]["gsx$orginaltitle"];
+                    string otitle = ((string)dictionary["$t"]);
+
+                    trialding a = new trialding();
+                    a.id = id;
+                    a.name = tname;
+                    a.oname = oname;
+                    a.description = tdesc;
+                    a.odescription = odesc;
+                    a.flavour = tflav;
+                    a.oflavour = oflav;
+                    a.title = ttitle;
+                    a.otitle = otitle;
+
+                    this.triallist.Add(id, a);
+                }
+
+            }
+
+
+        }
 
 
         private string getPieceTypes(Card c)
@@ -245,6 +551,9 @@ namespace TranslationTool.mod
             if (this.translatedDesc.Count > 0)
             { traDescs = true; }
 
+            this.untranslatedcard.Clear();
+            this.notTranslatedScrolls = false;
+
             for (int i = 0; i < this.id.Count; i++)
             {
                 int cardid = Convert.ToInt32(this.id[i]);//no need, but why not?:D
@@ -303,12 +612,13 @@ namespace TranslationTool.mod
 
                     if (foundDescription)
                     {
-                        Console.WriteLine("add mapped string " + cardname + " " + description + " " + flavor);
+                        //Console.WriteLine("add mapped string " + cardname + " " + description + " " + flavor);
                         this.translatedMappedStrings.Add(msd);
                     }
                     else 
                     {
                         Console.WriteLine("### " + flavor + " mappedstring was changed, so it is not translated");
+
                     }
                 }
 
@@ -323,6 +633,7 @@ namespace TranslationTool.mod
                     else
                     {
                         Console.WriteLine("## " + cardname + " description was changed, so it is not translated");
+                        this.untranslatedcard.Add(cardname);
                         this.notTranslatedScrolls = true;
                     }
                     //change flavor
@@ -420,10 +731,52 @@ namespace TranslationTool.mod
 
         }
 
+        private void setAchiveTexts()
+        {
+            List<AchievementType> alist = new List<AchievementType>( this.orginalAchivements.achievementTypes);
+
+            List<AchievementType> addlist = new List<AchievementType>();
+
+            foreach (AchievementType at in alist)
+            {
+                AchievementType nat = new AchievementType();
+
+
+                //add other stuff from orginal
+                nat.goldReward = at.goldReward;
+                nat.group = at.group;
+                nat.icon = at.icon;
+                nat.id = at.id;
+                nat.partType = at.partType;
+                nat.sortId = at.sortId;
+                nat.name = at.name;
+                nat.description = at.description;
+
+                if (this.achivementlist.ContainsKey(at.id.ToString()))
+                {
+                    achivementding ad = this.achivementlist[at.id.ToString()];
+
+                    if (ad.oname == at.name && ad.odescription == at.description)
+                    {
+                        //change name + desc!
+                        nat.name = ad.name;
+                        nat.description = ad.description;
+                        Console.WriteLine("### " + nat.name + " " + nat.description);
+                    }
+                    
+                }
+
+                addlist.Add(nat);
+            }
+            
+            AchievementTypeManager.getInstance().reset();
+            AchievementTypeManager.getInstance().feed(addlist.ToArray());
+        }
+
         private void setOrginalCardtexts()
         {
             clearDictionaries();
-
+            
             CardType[] cts = new CardType[this.orginalcards.cardTypes.Length];
             this.orginalcards.cardTypes.CopyTo(cts, 0);
 
@@ -479,17 +832,18 @@ namespace TranslationTool.mod
                 mappedstringlist.Add(new MappedString(key, value));
             }
 
-
+            
             Console.WriteLine("reset stuffs");
             //reset mappedstringmanager
             MappedStringManager.getInstance().reset();
             //feed it with new mappedstrigns!
-            MappedStringManager.getInstance().feed(mappedstringlist.ToArray());
+            //MappedStringManager.getInstance().feed(mappedstringlist.ToArray());
+            MappedStringManager.getInstance().feed(this.orginalmappedstrings.strings);
 
             //reset the keywords
 
             MethodInfo generateKeywords = typeof(CardType).GetMethod("generateKeywords", BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (CardType ct in cts)
+            foreach (CardType ct in this.orginalcards.cardTypes) //cts)
             {
                 generateKeywords.Invoke(ct, null);
             }
@@ -498,6 +852,10 @@ namespace TranslationTool.mod
             CardTypeManager.getInstance().reset();
             //feed with edited cardtypes
             CardTypeManager.getInstance().feed(cts);
+
+            //reset achivements
+            AchievementTypeManager.getInstance().reset();
+            AchievementTypeManager.getInstance().feed(this.orginalAchivements.achievementTypes);
 
 
 
@@ -544,12 +902,52 @@ namespace TranslationTool.mod
                 Console.WriteLine(response);
                 this.readJsonfromGoogle(response);
                 this.setCardtexts();
+
+                if (this.googleAchivementkeys.ContainsKey(key))
+                {
+                    response = this.getDataFromGoogleDocs(this.googleAchivementkeys[key]);
+                    Console.WriteLine("#achivement response");
+                    Console.WriteLine(response);
+                    this.readAchiveJsonfromGoogle(response);
+                    this.setAchiveTexts();
+                }
+
+                if (this.googleTutorialkeys.ContainsKey(key))
+                {
+                    response = this.getDataFromGoogleDocs(this.googleTutorialkeys[key]);
+                    Console.WriteLine("#trial response");
+                    Console.WriteLine(response);
+                    this.readTrialJsonfromGoogle(response);
+                }
+
+
             }
             else
             {
                 setOrginalCardtexts();
             }
+            RoomChatMessageMessage rcmm = new RoomChatMessageMessage();
+            rcmm.from = "LanguageChanger";
+            rcmm.roomName = this.chatroom;
+            rcmm.text = "language was loaded!";
 
+            if (this.notTranslatedScrolls)
+            {
+                rcmm.text = rcmm.text + "\r\n" + "list of untranslated cards:\r\n";
+                foreach (string ntc in this.untranslatedcard)
+                { 
+                rcmm.text = rcmm.text + ntc + ", ";
+                }
+
+            }
+            App.ArenaChat.handleMessage(rcmm);
+
+        }
+
+        public void incommingAchiveMessage(AchievementTypesMessage msg)
+        {
+            this.orginalAchivements = msg;
+            new Thread(new ThreadStart(this.workthread)).Start(); 
         }
 
         public void incommingMappedStringsMessage(MappedStringsMessage msg)
@@ -627,7 +1025,78 @@ namespace TranslationTool.mod
                     Console.WriteLine("## PassiveAbility: " + aa.displayName);
                 }*/
             }
-            new Thread(new ThreadStart(this.workthread)).Start();
+            
+            //do this after achivements now :D
+            //new Thread(new ThreadStart(this.workthread)).Start(); 
+        }
+
+
+        public void setTowerChallengeInfo(TowerChallengeInfo tci, GetTowerInfoMessage msg)
+        {
+            TowerLevel[] tls = msg.getSortedLevels();
+
+            foreach (TowerLevel tl in tls)
+            {
+                if (this.triallist.ContainsKey(tl.id.ToString()))
+                {
+                    trialding td = this.triallist[tl.id.ToString()];
+                    Console.WriteLine("### found trial " + tl.name + " " + tl.description);
+                    string odesc = tl.description.Replace(" ", "");
+                    odesc = odesc.Replace("\r\n", "");
+                    odesc = odesc.Replace("\n", "");
+                    odesc = odesc.Replace("\r", "");
+
+                    string tdesc = td.odescription.Replace(" ","");
+                    tdesc = tdesc.Replace("\r\n", "");
+                    tdesc = tdesc.Replace("\r", "");
+                    tdesc = tdesc.Replace("\n", "");
+
+                    if (odesc != tdesc) //dont check the title!
+                    {
+                        Console.WriteLine("### dont match because of " + odesc + " " + tdesc);
+                    }
+
+                    string oflav = tl.flavour.Replace(" ", "");
+                    oflav = oflav.Replace("\r\n", "");
+                    oflav = oflav.Replace("\n", "");
+                    oflav = oflav.Replace("\r", "");
+
+                    string tflav = td.oflavour.Replace(" ", "");
+                    tflav = tflav.Replace("\r\n", "");
+                    tflav = tflav.Replace("\r", "");
+                    tflav = tflav.Replace("\n", "");
+
+                    if (oflav != tflav) //dont check the title!
+                    {
+                        Console.WriteLine("### dont match because of " + oflav + " " + tflav);
+                    }
+
+                    string oname = tl.name.Replace(" ", "");
+                    oname = oname.Replace("\r\n", "");
+                    oname = oname.Replace("\n", "");
+                    oname = oname.Replace("\r", "");
+
+                    string tname = td.oname.Replace(" ", "");
+                    tname = tname.Replace("\r\n", "");
+                    tname = tname.Replace("\r", "");
+                    tname = tname.Replace("\n", "");
+
+                    if (oname != tname) //dont check the title!
+                    {
+                        Console.WriteLine("### dont match because of " + oname + " " + tname);
+                    }
+
+                    if (odesc == tdesc && oflav == tflav && oname == tname) //dont check the title!
+                    {
+                        tl.description = td.description;
+                        tl.name = td.name;
+                        tl.flavour = td.flavour;
+                        tl.title = td.title;
+                        
+                    }
+                }
+            }
+            tci.setLevels(tls);
         }
 
     }

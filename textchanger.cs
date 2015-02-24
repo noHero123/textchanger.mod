@@ -40,6 +40,9 @@ namespace TranslationTool.mod
 
                     RoomChatMessageMessage nrcmm = new RoomChatMessageMessage(rcmm.roomName, "Change the language of the card-descriptions with /language ENG (for example).\r\nto change the font type /language font arial\r\nfor a list of available languages/fonts type /language help");
                         nrcmm.from = "LanguageChanger";
+
+                        ctt.chatroom = nrcmm.roomName;
+
                         App.ArenaChat.handleMessage(nrcmm);
                         App.Communicator.removeListener(this);
 
@@ -51,6 +54,19 @@ namespace TranslationTool.mod
                 MappedStringsMessage msm = (MappedStringsMessage)msg;
                 ctt.incommingMappedStringsMessage(msm);
             }
+
+            if (msg is AchievementTypesMessage)
+            {
+                AchievementTypesMessage msm = (AchievementTypesMessage)msg;
+                ctt.incommingAchiveMessage(msm);
+            }
+
+            
+            /*if (msg is NewEffectsMessage )
+            {
+               //for translating the tutorial chat-effect-messages!
+                List<EffectMessage> effects = NewEffectsMessage.parseEffects(msg.getRawText());
+            }*/
 
             return;
         }
@@ -73,19 +89,145 @@ namespace TranslationTool.mod
             ctt = new CardTextTranslator(pathToConfig, sttngs);
             ctt.googlekeys.Add("DE", "0AhhxijYPL-BGdDJaWTI4UVJ3OUZfYzlCSWo3dkZSOXc");
             ctt.googlekeys.Add("FR", "0AsfEX06xqzPEdE9lQlg5NFg2ejBRamltMEhta2FrX2c");
-            ctt.googlekeys.Add("RU", "0AsYOnt3MiugydDRRUEp4eXU0VUloYUxiSW5nVXl0Y1E");
+            //ctt.googlekeys.Add("RU", "0AsYOnt3MiugydDRRUEp4eXU0VUloYUxiSW5nVXl0Y1E");//old one
+            ctt.googlekeys.Add("RU", "19I6vAusLM-iDWYAh9c7NL27VHjamoV4ZCw-4L55kLqw");
             ctt.googlekeys.Add("SP", "0AprX3iUTAgX9dDcyUUhQSnVndkxCSjVXTzJ6NDA0c3c");
-            //ctt.googlekeys.Add("ENN", "0AhhxijYPL-BGdG1uNXY5WkhJaW1yNm4yaXpMazlaQ3c"); // for checking the scrolls who are changed!
+
+
             
+            ctt.googleAchivementkeys.Add("RU", "1LVU7ZzOW_oK12va2SoHzp3XfLLFxEOvB5gaZ6OBdRDI");
+
+
+
+            ctt.googleTutorialkeys.Add("RU", "14-F9bQMXBdEn_7est4Xtc_b9lajnwdBHJiSqHE5P58w");
+
+
+
+           
+
 
             try
             {
                 App.Communicator.addListener(this);
             }
             catch { }
+
+            return;
+
+            //only for tests###################################
+
+            ctt.googlekeys.Add("test", "1zeYq6pCk8R1jc18mBFucQHsTTAnDMe0F56jqwOl4vU0");//test ding!
+            ctt.googleAchivementkeys.Add("test", "1WD7NMAXOJUcn3mm5-ZCQj7nynlvjVug8ZWetHWuTFuU");//test ding!
+            ctt.googleTutorialkeys.Add("test", "10KQhaApAQCOhKARzXeY6_T-xUYyC3AiPoj2710d6M7o");//test ding!
+
+
+            int k = 0;
+            int l = 0;
+            DateTime itze = DateTime.Now;
+            for (int i = 0; i < 1; i++)
+            {
+                string ttx = this.getDataFromGoogleDocs(ctt.googlekeys["test"]);
+                this.getDataFromGoogleDocs(ctt.googleAchivementkeys["test"]);
+                this.getDataFromGoogleDocs(ctt.googleTutorialkeys["test"]);
+                //Console.WriteLine(ttx);
+                ctt.readJsonfromGoogleFast(ttx);
+                k++;
+            }
+            DateTime itze1 = DateTime.Now;
+
+            //Console.WriteLine("#####");
+            
+            for (int i = 0; i < 1; i++)
+            {
+                string txt = this.getDataFastFromGoogleDocs(ctt.googlekeys["test"]);
+                this.getDataFastFromGoogleDocs(ctt.googleAchivementkeys["test"]);
+                this.getDataFastFromGoogleDocs(ctt.googleTutorialkeys["test"]);
+                //Console.WriteLine(txt);
+                ctt.readJsonfromGoogleFast(txt);
+                l++;
+            }
+            DateTime itze2 = DateTime.Now;
+
+
+            Console.WriteLine("### "+((itze1 - itze).TotalSeconds/k) + " vs " + ((itze2 - itze1).TotalSeconds/l));
 		}
 
-        
+
+
+        //teststuff json vs txt with 10 trys 
+        public string getDataFromGoogleDocs(string googledatakey)
+        {
+            WebRequest myWebRequest;
+
+            //https://docs.google.com/spreadsheet/pub?key=0AhhxijYPL-BGdDJaWTI4UVJ3OUZfYzlCSWo3dkZSOXc&output=txt
+
+            myWebRequest = WebRequest.Create("https://spreadsheets.google.com/feeds/list/" + googledatakey + "/od6/public/values?alt=json");
+            System.Net.ServicePointManager.ServerCertificateValidationCallback += (s, ce, ca, p) => true;// or you get an exeption, because mono doesnt trust anyone
+            myWebRequest.Timeout = 10000;
+
+
+            int loaded = 0;
+            string ressi = "";
+            while (loaded < 10)
+            {
+                try
+                {
+                    WebResponse myWebResponse = myWebRequest.GetResponse();
+                    System.IO.Stream stream = myWebResponse.GetResponseStream();
+                    System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8);
+                    ressi = reader.ReadToEnd();
+
+                    loaded = 10;
+                }
+                catch
+                {
+                    loaded++;
+                    Console.WriteLine("to");
+                }
+            }
+            
+            return ressi;
+        }
+
+        public string getDataFastFromGoogleDocs(string googledatakey)
+        {
+            WebRequest myWebRequest;
+
+            //https://docs.google.com/spreadsheets/d/1WD7NMAXOJUcn3mm5-ZCQj7nynlvjVug8ZWetHWuTFuU/export?format=tsv&id=1WD7NMAXOJUcn3mm5-ZCQj7nynlvjVug8ZWetHWuTFuU&gid=0
+            //new sheets:
+            myWebRequest = WebRequest.Create("https://docs.google.com/spreadsheets/d/" + googledatakey + "/export?format=tsv&id=" + googledatakey + "&gid=0");
+            //Console.WriteLine("https://docs.google.com/spreadsheets/d/" + googledatakey + "/export?format=tsv&id=" + googledatakey + "&gid=0");
+            
+            //old sheets:
+            //myWebRequest = WebRequest.Create("https://docs.google.com/spreadsheet/pub?key=" + googledatakey + "&output=txt");
+            System.Net.ServicePointManager.ServerCertificateValidationCallback += (s, ce, ca, p) => true;// or you get an exeption, because mono doesnt trust anyone
+            myWebRequest.Timeout = 10000;
+
+            int loaded = 0;
+            string ressi = "";
+            while (loaded < 10)
+            {
+                try
+                {
+                    WebResponse myWebResponse = myWebRequest.GetResponse();
+                    System.IO.Stream stream = myWebResponse.GetResponseStream();
+                    System.IO.StreamReader reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8);
+                    ressi = reader.ReadToEnd();
+
+                    loaded = 10;
+                }
+                catch
+                {
+                    loaded++;
+                    Console.WriteLine("tof");
+                }
+            }
+
+            return ressi;
+        }
+
+
+
 
 		public static string GetName ()
 		{
@@ -94,7 +236,7 @@ namespace TranslationTool.mod
 
 		public static int GetVersion ()
 		{
-			return 17;
+			return 22;
 		}
 
 
@@ -113,6 +255,8 @@ namespace TranslationTool.mod
                     //scrollsTypes["CardView"].Methods.GetMethod("createHelpOverlay")[0], // for changeing the font
            
                     scrollsTypes["CardView"].Methods.GetMethod("createText",new Type[]{typeof(GameObject), typeof(Font), typeof(string), typeof(int), typeof(float), typeof(Vector3)}),
+
+                    scrollsTypes["TowerChallengeInfo"].Methods.GetMethod("SetTowerChallengeInfo",new Type[]{typeof(GetTowerInfoMessage)}),
 
                     //scrollsTypes["Card"].Methods.GetMethod("getPieceKindText")[0], // to slow
              };
@@ -146,8 +290,11 @@ namespace TranslationTool.mod
                     return true;
                 }
             }
-            
 
+            if (info.target is TowerChallengeInfo && info.targetMethod.Equals("SetTowerChallengeInfo") && sttngs.usedLanguage != Language.ENG)
+            {
+                return true;
+            }
 
             return false;
         }
@@ -222,6 +369,12 @@ namespace TranslationTool.mod
             {
                 returnValue = createText((GameObject)info.arguments[0], (Font)info.arguments[1], (string)info.arguments[2], (int)info.arguments[3], (float)info.arguments[4], (Vector3)info.arguments[5], (CardView)info.target);
             }
+
+            if(info.target is TowerChallengeInfo && info.targetMethod.Equals("SetTowerChallengeInfo"))
+            {
+                ctt.setTowerChallengeInfo(info.target as TowerChallengeInfo, info.arguments[0] as GetTowerInfoMessage);
+                returnValue = true;
+            }
             
             if (info.target is Communicator && info.targetMethod.Equals("send") && info.arguments[0] is RoomChatMessageMessage && (info.arguments[0] as RoomChatMessageMessage).text.StartsWith("/language "))
             {
@@ -280,14 +433,10 @@ namespace TranslationTool.mod
                     System.IO.File.WriteAllText(this.pathToConfig + "Config.txt", language);
                     ctt.notTranslatedScrolls = false;
                     new Thread(new ThreadStart(ctt.workthread)).Start();
-                    rcmm.text = "the language was changed to " + language;
+                    rcmm.text = "the language is going to changed to " + language +", please wait...";
 
                     if (language == "RU") sttngs.usedFont = -1; // special for crylic
 
-                    if (ctt.notTranslatedScrolls)
-                    {
-                        rcmm.text = rcmm.text + "\r\n" + "some scrolls-translations are outdated, these were not translated";
-                    }
                 }
                 else
                 {
